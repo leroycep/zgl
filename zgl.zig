@@ -739,7 +739,19 @@ pub fn getShader(shader: types.Shader, parameter: ShaderParameter) types.Int {
     return value;
 }
 
-pub fn getShaderInfoLog(shader: types.Shader, allocator: std.mem.Allocator) ![:0]const u8 {
+pub fn getShaderInfoLog(shader: types.Shader, buf: []u8) []const u8 {
+    var len: binding.GLsizei = 0;
+
+    binding.getShaderInfoLog(@enumToInt(shader), cs2gl(buf.len), &len, buf.ptr);
+    checkError();
+
+    if (len > 512) len = 512;
+    const log = buf[0..@intCast(usize, len)];
+
+    return log;
+}
+
+pub fn getShaderInfoLogAlloc(shader: types.Shader, allocator: std.mem.Allocator) ![:0]const u8 {
     const length = getShader(shader, .info_log_length);
     const log = try allocator.allocSentinel(u8, @intCast(usize, length), 0);
     errdefer allocator.free(log);
@@ -817,7 +829,19 @@ pub fn getProgram(program: types.Program, parameter: ProgramParameter) types.Int
     return value;
 }
 
-pub fn getProgramInfoLog(program: types.Program, allocator: std.mem.Allocator) ![:0]const u8 {
+pub fn getProgramInfoLog(program: types.Program, buf: []u8) []const u8 {
+    var len: binding.GLsizei = 0;
+
+    binding.getProgramInfoLog(@enumToInt(program), cs2gl(buf.len), &len, buf.ptr);
+    checkError();
+
+    if (len > 512) len = 512;
+    const log = buf[0..@intCast(usize, len)];
+
+    return log;
+}
+
+pub fn getProgramInfoLogAlloc(program: types.Program, allocator: std.mem.Allocator) ![:0]const u8 {
     const length = getProgram(program, .info_log_length);
     const log = try allocator.allocSentinel(u8, @intCast(usize, length), 0);
     errdefer allocator.free(log);
@@ -1271,6 +1295,26 @@ pub fn cullFace(mode: CullMode) void {
     checkError();
 }
 
+pub const FaceWinding = enum(types.Enum) {
+    cw = binding.CW,
+    ccw = binding.CCW,
+};
+
+pub fn frontFace(winding: FaceWinding) void {
+    binding.frontFace(@enumToInt(winding));
+    checkError();
+}
+
+pub fn colorMask(red: bool, green: bool, blue: bool, alpha: bool) void {
+    binding.colorMask(
+        if (red) binding.TRUE else binding.FALSE,
+        if (green) binding.TRUE else binding.FALSE,
+        if (blue) binding.TRUE else binding.FALSE,
+        if (alpha) binding.TRUE else binding.FALSE,
+    );
+    checkError();
+}
+
 pub fn depthMask(enabled: bool) void {
     binding.depthMask(if (enabled) binding.TRUE else binding.FALSE);
     checkError();
@@ -1329,6 +1373,11 @@ pub fn stencilOp(sfail: StencilOp, dpfail: StencilOp, dppass: StencilOp) void {
     checkError();
 }
 
+pub fn stencilOpSeparate(face: CullMode, sfail: StencilOp, dpfail: StencilOp, dppass: StencilOp) void {
+    binding.stencilOpSeparate(@enumToInt(face), @enumToInt(sfail), @enumToInt(dpfail), @enumToInt(dppass));
+    checkError();
+}
+
 pub const BlendFactor = enum(types.Enum) {
     zero = binding.ZERO,
     one = binding.ONE,
@@ -1344,6 +1393,7 @@ pub const BlendFactor = enum(types.Enum) {
     one_minus_constant_color = binding.ONE_MINUS_CONSTANT_COLOR,
     constant_alpha = binding.CONSTANT_ALPHA,
     one_minus_constant_alpha = binding.ONE_MINUS_CONSTANT_ALPHA,
+    src_alpha_saturate = binding.SRC_ALPHA_SATURATE,
 };
 
 pub fn blendFunc(sfactor: BlendFactor, dfactor: BlendFactor) void {
@@ -2203,7 +2253,6 @@ pub fn hasExtension(extension: [:0]const u8) bool {
     return false;
 }
 
-pub fn loadExtensions(load_ctx: anytype, get_proc_address: fn(@TypeOf(load_ctx), [:0]const u8) ?*const anyopaque) !void {
-    return binding.load( load_ctx, get_proc_address );
+pub fn loadExtensions(load_ctx: anytype, get_proc_address: fn (@TypeOf(load_ctx), [:0]const u8) ?*const anyopaque) !void {
+    return binding.load(load_ctx, get_proc_address);
 }
-
