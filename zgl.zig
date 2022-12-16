@@ -2034,6 +2034,11 @@ pub fn drawBuffers(bufs: []const FramebufferAttachment) void {
     binding.drawBuffers(cs2gl(bufs.len), @ptrCast([*]const types.UInt, bufs.ptr));
 }
 
+pub fn readPixels(x: usize, y: usize, width: usize, height: usize, pixel_format: PixelFormat, pixel_type: PixelType, data: []u8) void {
+    binding.readnPixels(@intCast(binding.GLint, x), @intCast(binding.GLint, y), @intCast(binding.GLint, width), @intCast(binding.GLint, height), @enumToInt(pixel_format), @enumToInt(pixel_type), @intCast(binding.GLsizei, data.len), data.ptr);
+    checkError();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Parameters
 pub const Parameter = enum(types.Enum) {
